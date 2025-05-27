@@ -1,0 +1,43 @@
+.container {
+    display: flex;
+    justify-content: center;
+    height: 100vh;
+    position: relative;
+    color: var(--main-font-color);
+    width: 100%;
+}
+
+.back1 {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 30%;
+}
+
+.back2 {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 30%;
+}
+
+.logo {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+}
+
+.loginArea {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 20px;
+}
+
+.select {
+    position: absolute;
+    top: 1.4rem;
+    left: 12rem;
+}
+

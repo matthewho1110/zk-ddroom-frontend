@@ -1,0 +1,228 @@
+@font-face {
+    font-family: "Grotesco";
+    src: url("/fonts/Grotesco/Fontspring-DEMO-grotesco-black.otf");
+    font-style: normal;
+    font-weight: 300;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: "Open Sans";
+    src: url("/fonts/OpenSans/OpenSans-VariableFont_wdth,wght.ttf");
+    font-style: normal;
+    font-weight: "300 800";
+    font-display: swap;
+}
+
+@keyframes appearAnimation {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+html,
+body {
+    font-family: Roboto, Helvetica, Arial, sans-serif;
+    --light-blue: #8ec7fe;
+    --main-blue: #a51eff;
+    --transparent-blue: rgb(30, 144, 255, 0.3);
+    --dark-blue: #1b5ab0;
+    --darker-blue: #002961;
+
+    --light-green: #7dff00;
+    --light-gray: #f8fafb;
+    --main-gray: #808080;
+
+    --main-font-color: rgb(30, 35, 41);
+    padding: 0 !important;
+    margin: 0;
+    color: var(--main-font-color);
+    /* overflow-y: scroll !important; */
+    /* -webkit-user-select: none;
+    user-select: none; */
+    scrollbar-width: thin;
+    padding-right: 0 !important;
+    overflow: scroll !important;
+}
+
+@media only screen and (max-width: 768px) {
+    body {
+        padding-bottom: constant(safe-area-inset-bottom) !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        &::after {
+            display: block;
+            content: "";
+            width: 100%;
+            height: constant(safe-area-inset-bottom);
+            height: env(safe-area-inset-bottom);
+            position: fixed;
+            z-index: 80;
+            bottom: 0;
+            left: 0;
+            background: rgba(250, 250, 250, 1);
+        }
+    }
+}
+
+/* For extremely small screen devices (595px and below) */
+@media only screen and (min-width: 1024px) {
+    html {
+        font-size: 100%;
+    }
+}
+@media only screen and (min-width: 1280px) {
+    html {
+        font-size: 110%;
+    }
+}
+@media only screen and (min-width: 1536px) {
+    html {
+        font-size: 120%;
+    }
+}
+@media only screen and (min-width: 1920px) {
+    html {
+        font-size: 130%;
+    }
+}
+
+progress::-moz-progress-bar {
+    background: blue;
+}
+progress::-webkit-progress-value {
+    background: blue;
+}
+progress {
+    color: blue;
+}
+
+/* Scroll bar stylings */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #bbbbbb;
+    border-radius: 5px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #999999;
+    width: 5px;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: #555;
+    width: 5px;
+}
+
+a {
+    /* text-decoration: none;
+    display: inline-block;
+    margin: 0;
+    padding: 0; */
+}
+
+a img {
+    display: block;
+    width: 100%;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.flex {
+    display: flex;
+    flex-wrap: wrap;
+}
+.wrap {
+    flex-wrap: wrap;
+}
+
+.pdf-canvas > * {
+    width: 100%;
+}
+
+.pg-viewer-wrapper .video-container video {
+    width: 100%;
+}
+
+.pg-viewer-wrapper .loading-container {
+    position: absolute;
+}
+
+.link-btn {
+    display: inline-block;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    color: var(--main-blue);
+}
+
+.show-hide-btn {
+    display: inline;
+    color: var(--main-gray);
+}
+
+.show-hide-btn:hover {
+    text-decoration: underline;
+}
+
+.overflow-x-div {
+    overflow-x: auto;
+}
+
+.onAppearAnimated {
+    animation: appearAnimation 0.3s ease;
+}
+
+/* Override MUI modal removing scroll bar styling */
+.modal-open {
+    padding-right: 0 !important;
+}
+
+.email-submit-btn {
+    padding: 0;
+    font-size: 2rem;
+    background-color: transparent;
+}
+
+.email-submit-btn:hover {
+    background-color: transparent;
+}
+
+/* Event Calendar */
+.fc-button,
+.fc-daygrid-day-number,
+.fc-col-header-cell-cushion,
+.fc-event-title {
+    font-size: 0.68rem !important;
+}
+
+.fc-toolbar-title {
+    font-size: 1.5rem !important;
+}
+
+.ql-container {
+    min-height: 250px !important;
+}
+
+.ql-editor {
+    min-height: 250px !important;
+}
+
+.ql-tooltip {
+    left: 0 !important;
+}
