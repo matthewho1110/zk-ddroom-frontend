@@ -9,6 +9,7 @@ import { ConfirmationDialogProvider } from "../contexts/ConfirmationDialogContex
 
 // MUI contexts
 import { LocalizationProvider } from "@mui/x-date-pickers-pro";
+import { registerLicense } from "@syncfusion/ej2-base";
 
 // React hooks
 import { useState, useEffect } from "react";
@@ -40,12 +41,15 @@ import {
 LicenseInfo.setLicenseKey(
     "3aed98047380ceb8773b8e5978dd5493T1JERVI6Mzg4NDEsRVhQSVJZPTE3MTUyODk3ODMwMDAsS0VZVkVSU0lPTj0x"
 );
+registerLicense(
+    "Ngo9BigBOggjHTQxAR8/V1NDaF5cWWtCf1FpRmJGdld5fUVHYVZUTXxaS00DNHVRdkdnWH9cdHRVRmZdUEV+V0Y="
+);
 
 function MyApp({ Component, pageProps }) {
     const [queryClient] = useState(() => new QueryClient());
     const [loading, setLoading] = useState(true);
     const [languageChange, setLanguageChange] = useState(false);
-    const [title, setTitle] = useState('')
+    const [title, setTitle] = useState("");
     return (
         <QueryClientProvider client={queryClient}>
             <Hydrate state={pageProps.dehydratedState}>
@@ -70,8 +74,19 @@ function MyApp({ Component, pageProps }) {
                                     <ConfirmationDialog />
                                     <WelcomeContent />
 
-                                    <ComponentWrapper languageChange title={title} onReload={() => setLanguageChange(!languageChange)} onSetTitle={str => setTitle(str)}>
-                                        <Component {...pageProps} title={title} onSetTitle={str => setTitle(str)} />
+                                    <ComponentWrapper
+                                        languageChange
+                                        title={title}
+                                        onReload={() =>
+                                            setLanguageChange(!languageChange)
+                                        }
+                                        onSetTitle={(str) => setTitle(str)}
+                                    >
+                                        <Component
+                                            {...pageProps}
+                                            title={title}
+                                            onSetTitle={(str) => setTitle(str)}
+                                        />
                                     </ComponentWrapper>
                                 </ConfirmationDialogProvider>
                             </UserProvider>

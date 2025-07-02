@@ -9,17 +9,8 @@ import { Box, Alert, Stack, Grid, Modal } from "@mui/material";
 import Button from "@mui/material/Button";
 import SmartToyOutlinedIcon from "@mui/icons-material/SmartToyOutlined";
 
-const ChatBot = ({ dataroomId }) => {
-    const [chatBotModalOpen, setChatBotModalOpen] = useState(false);
+const ChatBot = ({ dataroomId, chatBotModalOpen, handleChatBotOpen }) => {
     const [isDocked, setIsDocked] = useState(false);
-    const handleChatBotModalOpen = useCallback(
-        () => setChatBotModalOpen(true),
-        []
-    );
-    const handleChatBotModalClose = useCallback(
-        () => setChatBotModalOpen(false),
-        []
-    );
 
     const handleDock = useCallback(() => {
         setIsDocked((prev) => !prev);
@@ -40,30 +31,10 @@ const ChatBot = ({ dataroomId }) => {
                       }
             }
         >
-            {!chatBotModalOpen && (
-                <Button
-                    onClick={handleChatBotModalOpen}
-                    sx={{
-                        borderRadius: 50,
-                        // paper like shadow
-                        boxShadow: 3,
-                        backgroundColor: "White",
-                    }}
-                >
-                    <SmartToyOutlinedIcon
-                        sx={{
-                            width: 40,
-                            height: 40,
-                        }}
-                    />
-                    {/* <p>DDRoom Wiki</p> */}
-                </Button>
-            )}
-
             {chatBotModalOpen && (
                 <ChatBotModal
                     open={chatBotModalOpen}
-                    onClose={handleChatBotModalClose}
+                    onClose={() => handleChatBotOpen(false)}
                     dataroomId={dataroomId}
                     isDocked={isDocked}
                     onDock={handleDock}

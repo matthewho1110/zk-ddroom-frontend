@@ -21,6 +21,11 @@ function CreateFolderModal({
         e.preventDefault();
         e.stopPropagation();
         try {
+            // Check if name contains special characters
+            if (name && /[^a-zA-Z0-9-_ ]/.test(name)) {
+                setAlert("Folder name can only contain letters, numbers, hyphens, and underscores.", "error");
+                return;
+            };
             const createdFolder = await axiosInstance.patch(
                 `${process.env.BACKEND_URI}/datarooms/${dataroomId}/files/${directory}/upload`,
                 {

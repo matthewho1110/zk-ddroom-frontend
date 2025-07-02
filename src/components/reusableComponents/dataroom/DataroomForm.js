@@ -29,6 +29,7 @@ import { bytesToGb, gbToBytes } from "../../../utils/fileHelper";
 import { Form, Formik } from "formik";
 import * as Yup from "yup";
 import lange from "@i18n";
+import useSWR from "swr";
 
 // Custom configs
 import { PHASES } from "../../../configs/dataroomConfig";
@@ -45,15 +46,20 @@ const DataroomForm = ({
     const unlimitedContractStorage = contract?.maxStorage == -1;
     const contractRemainingStorage = bytesToGb(
         contract?.maxStorage -
-        contract?.allocatedStorage +
-        (dataroom?.maxStorage
-            ? dataroom?.maxStorage == -1
-                ? 0
-                : dataroom?.maxStorage
-            : 0)
+            contract?.allocatedStorage +
+            (dataroom?.maxStorage
+                ? dataroom?.maxStorage == -1
+                    ? 0
+                    : dataroom?.maxStorage
+                : 0)
     );
-    const usedStorage = bytesToGb(dataroom?.usedStorage);
 
+    const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+    const { data: usedStorage } = useSWR(
+        dataroom?._id ? `/datarooms/${dataroom._id}/size` : null,
+        fetcher
+    );
+    let usedStorageSize = bytesToGb(usedStorage?.size);
     let maxStorageSchema = dataroomStorageYupSchema;
 
     !unlimitedContractStorage &&
@@ -64,18 +70,19 @@ const DataroomForm = ({
 
     dataroom &&
         (maxStorageSchema = maxStorageSchema.min(
-            usedStorage,
-            `Max storage must be greater than used storage - ${usedStorage} GB`
+            usedStorageSize,
+            `Max storage must be greater than used storage - ${usedStorageSize} GB`
         ));
 
     const storageHelperText = () => {
         let text = "";
-        dataroom && (text += `Used storage - ${usedStorage} GB | `);
+        dataroom && (text += `Used storage - ${usedStorageSize} GB | `);
 
-        text += `Contract remaining storage: ${unlimitedContractStorage
-            ? "Unlimited"
-            : contractRemainingStorage + " GB"
-            }`;
+        text += `Contract remaining storage: ${
+            unlimitedContractStorage
+                ? "Unlimited"
+                : contractRemainingStorage + " GB"
+        }`;
         return text;
     };
 

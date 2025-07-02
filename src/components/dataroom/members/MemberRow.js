@@ -38,6 +38,7 @@ const MemberRow = ({
     onGroupChange,
     onRoleChange,
     groups = [],
+    dataroomRoleName,
 }) => {
     // Custom hooks
     const { setAlert } = useAlert();
@@ -46,7 +47,6 @@ const MemberRow = ({
     const [showGroupDropdown, setShowGroupDropdown] = useState(false);
     const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
     const open = Boolean(anchorEl);
-
     // Member role
     const memberLevel = ROLES[member.role]?.level;
 
@@ -159,7 +159,9 @@ const MemberRow = ({
             {showRoles == true && (
                 <TableCell align="left" width="18%">
                     {manageable == false && (
-                        <Typography>{member.role}</Typography>
+                        <Typography>
+                            {dataroomRoleName[member.role] || member.role}
+                        </Typography>
                     )}
 
                     {manageable == true &&
@@ -171,7 +173,9 @@ const MemberRow = ({
                                         onRoleChange(member._id, role);
                                     }
                                 }}
-                                selectedRole={member.role}
+                                selectedRole={
+                                    dataroomRoleName[member.role] || member.role
+                                }
                                 roles={
                                     // Only show roles that are lower or equal than the current user's role
                                     Object.keys(ROLES).filter((role) => {
@@ -181,11 +185,12 @@ const MemberRow = ({
                                         );
                                     })
                                 }
+                                dataroomRoleName={dataroomRoleName}
                                 sx={{ width: "80%" }}
                             />
                         ) : (
                             <Box>
-                                {member.role}{" "}
+                                {dataroomRoleName[member.role] || member.role}{" "}
                                 {
                                     <IconButton
                                         onClick={() =>

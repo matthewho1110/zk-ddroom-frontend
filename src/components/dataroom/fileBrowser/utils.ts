@@ -3,6 +3,7 @@ export const binaryToFile = (
     fileName: string,
     fileType: string
 ) => {
+    console.log(buffer, fileName, fileType);
     const blob = new Blob([buffer], {
         type: fileType,
     });

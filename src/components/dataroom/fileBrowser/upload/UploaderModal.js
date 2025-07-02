@@ -90,6 +90,11 @@ function UploaderModal({
         fetcher
     );
 
+    const { data: usedStorage } = useSWR(
+        dataroomId ? `/datarooms/${dataroomId}/size` : null,
+        fetcher
+    );
+
     // Get user role of the dataroom
     const dataroomRole = ROLES[dataroomData?.role];
     const dataroom = dataroomData?.dataroom;
@@ -113,7 +118,7 @@ function UploaderModal({
             // Check if the total upload size exceeds the dataroom storage limit
             if (dataroom?.maxStorage != -1) {
                 if (
-                    dataroom?.usedStorage + totalUploadSize >
+                    usedStorage?.size + totalUploadSize >
                     dataroom?.maxStorage
                 ) {
                     setAlert(
@@ -127,7 +132,6 @@ function UploaderModal({
                 ...prevState,
                 status: "PREPARING",
             }));
-
             const response = await axiosInstance.patch(
                 `datarooms/${dataroomId}/files/${currentFileId}/upload`,
                 {
@@ -158,12 +162,16 @@ function UploaderModal({
     };
 
     const uploadProgress = getUploadProgress();
-
+    const [singleUploadProgress, setSingleUploadProgress] = useState(0);
     const onFileUploadComplete = (result) => {
         setUploadState((prevState) => ({
             ...prevState,
             [result]: prevState[result] + 1,
         }));
+    };
+
+    const handleUploadProgress = (percentage) => {
+        setSingleUploadProgress(percentage);
     };
 
     useEffect(() => {
@@ -185,16 +193,22 @@ function UploaderModal({
                     top: "50%",
                     left: "50%",
                     transform: "translate(-50%, -50%)",
-                    width: "80vw",
-                    height: "80vh",
-                    padding: "16px",
+                    width: { xs: "90vw", sm: "80vw", md: "70vw" },
+                    height: { xs: "90vh", sm: "80vh", md: "70vh" },
+                    padding: { xs: "8px", sm: "16px" },
                     display: "flex",
                     flexDirection: "column",
+                    overflow: "hidden",
                 }}
                 component="form"
             >
                 <Box display="flex" flexDirection="row" sx={{ mb: 2 }}>
-                    <Typography variant="h3">File Uploads</Typography>
+                    <Typography
+                        variant="h6"
+                        sx={{ fontSize: { xs: "1.2rem", sm: "1.5rem" } }}
+                    >
+                        File Uploads
+                    </Typography>
                 </Box>
 
                 <TableContainer
@@ -217,7 +231,6 @@ function UploaderModal({
                     >
                         <TableHead>
                             <TableRow>
-                                {/* <TableCell width="10%">Index</TableCell> */}
                                 <TableCell width="60%">
                                     {lange("File_Name")}
                                 </TableCell>
@@ -238,130 +251,121 @@ function UploaderModal({
                                 },
                             }}
                         >
-                            {uploads.map((upload, i) => {
-                                return (
-                                    <FileUploadRow
-                                        visible={true}
-                                        dataroomId={dataroomId}
-                                        file={upload}
-                                        key={i}
-                                        // directoryIndex={directoryIndex}
-                                        // subIndex={startingSubIndex + i}
-                                        depth={0}
-                                        onRemove={onFileRemove}
-                                        rootUploadStatus={uploadState.status}
-                                        signedFiles={uploadState.signedFiles}
-                                        onUploadComplete={onFileUploadComplete}
-                                    />
-                                );
-                            })}
+                            {uploads.map((upload, i) => (
+                                <FileUploadRow
+                                    visible={true}
+                                    dataroomId={dataroomId}
+                                    file={upload}
+                                    key={i}
+                                    uploadProgress={handleUploadProgress}
+                                    depth={0}
+                                    onRemove={onFileRemove}
+                                    rootUploadStatus={uploadState.status}
+                                    signedFiles={uploadState.signedFiles}
+                                    onUploadComplete={onFileUploadComplete}
+                                />
+                            ))}
                         </TableBody>
                     </Table>
                 </TableContainer>
                 <Divider />
                 <Stack
-                    direction="row"
+                    direction={{ xs: "column", sm: "row" }}
                     alignItems="flex-end"
                     position="relative"
                     width="100%"
                     p={2}
-                    spacing={6}
+                    spacing={2}
                     mt={1}
                 >
                     {dataroomRole?.showDataroomStorage && (
                         <StorageCard
-                            usedStorage={dataroom?.usedStorage}
+                            usedStorage={usedStorage?.size}
                             maxStorage={dataroom?.maxStorage}
                             sx={{
                                 color: "black",
-                                width: "30%",
+                                width: { xs: "100%", sm: "30%" },
                                 m: 0,
                                 p: 0,
                                 border: "none",
                             }}
                         />
                     )}
-                    {
-                        // If we are uploading, show the progress bar
-                        [
-                            "UPLOADING",
-                            "FINISHED",
-                            "PREPARING",
-                            "PENDING",
-                            "ERROR",
-                        ].includes(uploadState.status) && (
-                            <Box
-                                sx={{
-                                    width: "100%",
-                                    display: "flex",
-                                    margin: 2,
-                                    flexDirection: "column",
-                                }}
-                            >
-                                {uploadState.status == "PREPARING" && (
-                                    <Typography variant="h6">
-                                        Preparing file upload
-                                    </Typography>
+
+                    {[
+                        "UPLOADING",
+                        "FINISHED",
+                        "PREPARING",
+                        "PENDING",
+                        "ERROR",
+                    ].includes(uploadState.status) && (
+                        <Box
+                            sx={{
+                                width: "100%",
+                                display: "flex",
+                                margin: { xs: 1, sm: 2 },
+                                flexDirection: "column",
+                            }}
+                        >
+                            {uploadState.status == "PREPARING" && (
+                                <Typography variant="h6">
+                                    Preparing file upload
+                                </Typography>
+                            )}
+                            {uploadState.status == "PENDING" && (
+                                <Typography variant="h6">
+                                    Pending uploads{" "}
+                                    {formatFileSize(totalUploadSize)}
+                                </Typography>
+                            )}
+                            {["UPLOADING", "FINISHED"].includes(
+                                uploadState.status
+                            ) && (
+                                <Typography variant="h6">
+                                    {uploads.length == 1
+                                        ? singleUploadProgress
+                                        : Math.round(uploadProgress)}
+                                    % Complete
+                                </Typography>
+                            )}
+                            {uploadState.status == "ERROR" && (
+                                <Typography variant="h6" sx={{ mb: 1 }}>
+                                    Upload Failed. Please check the file names
+                                    and dataroom storage space.
+                                </Typography>
+                            )}
+                            <Box width="100%">
+                                {uploadState.status == "PENDING" && (
+                                    <BorderLinearProgress
+                                        variant="determinate"
+                                        value={0}
+                                    />
                                 )}
-                                {
-                                    uploadState.status == "PENDING" && (
-                                        <Typography variant="h6">
-                                            Pending uploads{" "}
-                                            {formatFileSize(totalUploadSize)}
-                                        </Typography>
-                                    ) // If we are waiting for the user to start the upload, show the waiting message
-                                }
+                                {uploadState.status == "PREPARING" && (
+                                    <BorderLinearProgress />
+                                )}
                                 {["UPLOADING", "FINISHED"].includes(
                                     uploadState.status
                                 ) && (
-                                    <Typography variant="h6">
-                                        {Math.round(uploadProgress)}% Complete
-                                    </Typography>
-                                )}
-
-                                {uploadState.status == "ERROR" && (
-                                    <Typography variant="h6" sx={{ mb: 1 }}>
-                                        {
-                                            "Upload Failed. Please check the file names and dataroom storage space."
+                                    <BorderLinearProgress
+                                        variant="determinate"
+                                        value={
+                                            uploads.length == 1
+                                                ? singleUploadProgress
+                                                : uploadProgress
                                         }
-                                    </Typography>
+                                    />
                                 )}
-
-                                <Box width="100%">
-                                    {
-                                        // If we are waiting for the user to start the upload, show the waiting progress bar
-                                        uploadState.status == "PENDING" && (
-                                            <BorderLinearProgress
-                                                variant="determinate"
-                                                value={0}
-                                            />
-                                        )
-                                    }
-                                    {
-                                        // If we are preparing files, show the preparing progress bar
-                                        uploadState.status == "PREPARING" && (
-                                            <BorderLinearProgress />
-                                        )
-                                    }
-                                    {["UPLOADING", "FINISHED"].includes(
-                                        uploadState.status
-                                    ) && (
-                                        <BorderLinearProgress
-                                            variant="determinate"
-                                            value={uploadProgress}
-                                        />
-                                    )}
-                                    {uploadState.status == "ERROR" && (
-                                        <BorderLinearProgress
-                                            variant="determinate"
-                                            value={100}
-                                            color="error"
-                                        />
-                                    )}
-                                </Box>
+                                {uploadState.status == "ERROR" && (
+                                    <BorderLinearProgress
+                                        variant="determinate"
+                                        value={100}
+                                        color="error"
+                                    />
+                                )}
                             </Box>
-                        )
-                    }
+                        </Box>
+                    )}
                     <Stack direction="row" spacing={2}>
                         {["PENDING", "ERROR", "FINISHED"].includes(
                             uploadState.status

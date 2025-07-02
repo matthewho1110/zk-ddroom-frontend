@@ -3,6 +3,8 @@ import FolderIcon from "@mui/icons-material/Folder";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import { Box, TableCell, TableRow } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";
+import KeyboardArrowRightIcon from "@mui/icons-material/KeyboardArrowRight";
+import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 
 // import internal modules
 import useAlert from "../../../hooks/useAlert";
@@ -16,6 +18,8 @@ import { memo, useEffect, useState } from "react";
 import useUser from "../../../hooks/useUser";
 import useDataroom from "../../../hooks/useDataroom";
 import lange from "@i18n";
+import CircularProgress from "@mui/material/CircularProgress"; // Import the loading spinner
+import { set } from "lodash";
 
 function File({
     visible,
@@ -43,6 +47,9 @@ function File({
     // Keep track of the group id
     const [group, setGroup] = useState(groupId);
 
+    // Loading state
+    const [loading, setLoading] = useState(false);
+    const [curClick, setCurClick] = useState(null);
     const depth = file?.path?.replace(/\/+$/, "").split("/").length - 1 || 0;
 
     const isInherited = file?.permissions?.[groupId] == null;
@@ -115,6 +122,8 @@ function File({
         ) {
             newPermissionLevel = null;
         }
+        setLoading(true); // Start loading
+        setCurClick(newPermission);
         try {
             await axiosInstance.patch(
                 `${process.env.BACKEND_URI}/datarooms/${dataroomId}/files/${file._id}`,
@@ -133,6 +142,9 @@ function File({
             setAlert("Permission updated", "success");
         } catch (err) {
             alertHandler(err);
+        } finally {
+            setLoading(false); // Stop loading
+            setCurClick(null);
         }
     };
 
@@ -172,13 +184,19 @@ function File({
                                 {file.type == "folder" && (
                                     <>
                                         {collapsed ? (
-                                            <FolderOpenIcon
-                                                style={{ color: "grey" }}
-                                            />
+                                            <>
+                                                <KeyboardArrowDownIcon />
+                                                <FolderOpenIcon
+                                                    style={{ color: "grey" }}
+                                                />
+                                            </>
                                         ) : (
-                                            <FolderIcon
-                                                style={{ color: "grey" }}
-                                            />
+                                            <>
+                                                <KeyboardArrowRightIcon />
+                                                <FolderIcon
+                                                    style={{ color: "grey" }}
+                                                />
+                                            </>
                                         )}
                                         &nbsp;&nbsp;
                                     </>
@@ -223,43 +241,56 @@ function File({
                                         }}
                                         className={styles.permissionCell}
                                     >
-                                        {currentPermissionLevel ==
-                                            permissionLevel &&
-                                            !isInherited && (
-                                                <Box
-                                                    className={
-                                                        styles.permissionIcon
-                                                    }
-                                                    zIndex={1}
-                                                >
-                                                    {activeIcon}
-                                                </Box>
-                                            )}
-
-                                        {isInherited &&
-                                            currentPermissionLevel ==
-                                                permissionLevel && (
-                                                <Box
-                                                    className={
-                                                        styles.permissionIcon
-                                                    }
-                                                    zIndex={888}
-                                                >
-                                                    {inheritIcon}
-                                                </Box>
-                                            )}
-
-                                        {
+                                        {loading && curClick === permission ? ( // Show loading spinner
                                             <Box
                                                 className={
-                                                    styles.permissionIcon +
-                                                    " " +
-                                                    styles.hiddenIcon
+                                                    styles.permissionIcon
                                                 }
+                                                zIndex={1}
                                             >
-                                                {hiddenIcon}
+                                                <CircularProgress size={20} />
                                             </Box>
-                                        }
+                                        ) : (
+                                            <>
+                                                {currentPermissionLevel ==
+                                                    permissionLevel &&
+                                                    !isInherited && (
+                                                        <Box
+                                                            className={
+                                                                styles.permissionIcon
+                                                            }
+                                                            zIndex={1}
+                                                        >
+                                                            {activeIcon}
+                                                        </Box>
+                                                    )}
+
+                                                {isInherited &&
+                                                    currentPermissionLevel ==
+                                                        permissionLevel && (
+                                                        <Box
+                                                            className={
+                                                                styles.permissionIcon
+                                                            }
+                                                            zIndex={888}
+                                                        >
+                                                            {inheritIcon}
+                                                        </Box>
+                                                    )}
+
+                                                {
+                                                    <Box
+                                                        className={
+                                                            styles.permissionIcon +
+                                                            " " +
+                                                            styles.hiddenIcon
+                                                        }
+                                                    >
+                                                        {hiddenIcon}
+                                                    </Box>
+                                                }
+                                            </>
+                                        )}
                                     </TableCell>
                                 );
                             })}

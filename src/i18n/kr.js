@@ -2,7 +2,7 @@ export default {
     English: "영어",
     Simplified_Chinese: "중국어 간체",
     Dataroom: "데이터룸",
-    Login_Title: "DDRoom 에 오신 것을 환영합니다",
+    Login_Title: "Zk-group 에 오신 것을 환영합니다",
     Login_Des: "등록된 이메일 주소와 비밀번호로 로그인하세요",
     Login_Tips: "플랫폼을 처음 사용하시나요?",
     Login_Tips_Link: "계정 만들기",
@@ -62,6 +62,7 @@ export default {
     Documents: "문서",
     File_Browser: "파일 브라우저",
     Permissions: "권한",
+    AI_Document_Generator: "AI 문서 생성기",
     Events: "이벤트",
     Member_Activities: "사용자 활동",
     Members: "멤버",
@@ -193,4 +194,14 @@ export default {
     All_Questions: "모든 질문",
     Add_New_FAQ: "새 FAQ 추가",
     New_Question: "새 질문",
+
+    Select_Files: "파일 선택",
+    Maximum_Files_allowed: "최대 파일 수",
+    File_count: "파일 수",
+    Output_document: "출력 문서",
+    Template: "템플릿",
+    Language: "언어",
+    Instruction_for_the_AI: "AI에 대한 지침",
+
+    Meeting: "회의",
 };

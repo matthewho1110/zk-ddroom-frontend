@@ -96,7 +96,7 @@ const PermissionsPage = ({ dataroomId }) => {
         fileId,
         permissionType,
         enabled
-    ) => { };
+    ) => {};
 
     const handlePermissionChangeCallback = useCallback(
         handlePermissionChange,
@@ -135,7 +135,11 @@ const PermissionsPage = ({ dataroomId }) => {
             height="100vh"
             p={isMobile ? 0 : 6}
         >
-            {!isMobile && <Typography variant="h3">{lange("Permission_Control")}</Typography>}
+            {!isMobile && (
+                <Typography variant="h3">
+                    {lange("Permission_Control")}
+                </Typography>
+            )}
             <Box marginTop={isMobile ? 0 : 5} display="flex">
                 <GroupsDropdown
                     sx={{ width: 300 }}
@@ -201,7 +205,7 @@ const PermissionsPage = ({ dataroomId }) => {
                     position: "relative",
                     overflow: "hidden",
                     marginTop: isMobile ? "30px" : "1.5rem",
-                    boxShadow: isMobile && "none"
+                    boxShadow: isMobile && "none",
                 }}
             >
                 {groupId && !isMobile && (
@@ -278,10 +282,7 @@ const PermissionsPage = ({ dataroomId }) => {
                     </TableContainer>
                 )}
                 {groupId && isMobile && (
-                    <FileMobileView
-                        dataroomId={dataroomId}
-                        groupId={groupId}
-                    />
+                    <FileMobileView dataroomId={dataroomId} groupId={groupId} />
                 )}
 
                 {!groupLoading && filteredGroups?.length == 0 && (

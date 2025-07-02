@@ -15,8 +15,10 @@ const MenuItem = ({ role, item, onCollapse, menuOpen, onOpenMenu }) => {
 
     const handleClick = () => {
         router.push(item.path);
-        { !menuOpen && onOpenMenu && onOpenMenu() }
-        isMobile && onCollapse()
+        {
+            !menuOpen && onOpenMenu && onOpenMenu();
+        }
+        isMobile && onCollapse();
     };
     const isCurrentPath = router.pathname == item.pathname;
 
@@ -41,7 +43,16 @@ const MenuItem = ({ role, item, onCollapse, menuOpen, onOpenMenu }) => {
                     },
                 }}
             >
-                {(item.icon || menuOpen) && <ListItemIcon sx={{ color: "white", minWidth: isMobile ? "36px" : "56px" }}>{item.icon}</ListItemIcon>}
+                {(item.icon || menuOpen) && (
+                    <ListItemIcon
+                        sx={{
+                            color: "white",
+                            minWidth: isMobile ? "36px" : "56px",
+                        }}
+                    >
+                        {item.icon}
+                    </ListItemIcon>
+                )}
                 <ListItemText>
                     <Typography variant="h6">{item.name}</Typography>
                 </ListItemText>

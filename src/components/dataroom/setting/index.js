@@ -4,14 +4,20 @@ import { Box, Typography, Stack, Tabs, Tab } from "@mui/material";
 
 import { useState } from "react";
 import MainSetting from "./MainSetting";
-import lange from '@i18n';
+import AdminSetting from "./AdminSetting";
+import lange from "@i18n";
 import { isMobile } from "react-device-detect";
+import useUserProfileQuery from "../../../hooks/useUserProfile";
 
 const SettingPage = ({ dataroomId }) => {
     const [page, setPage] = useState("main");
     const handlePageChange = (event, newPage) => {
         setPage(newPage);
     };
+
+    const data = useUserProfileQuery();
+    const isAdmin = data?.data?.platform_role == "Super Admin";
+
     return (
         <Box
             display="flex"
@@ -42,6 +48,14 @@ const SettingPage = ({ dataroomId }) => {
                         sx={{ typography: "h6" }}
                         disableRipple
                     />
+                    {isAdmin && (
+                        <Tab
+                            value={"admin"}
+                            label={"ADMIN"}
+                            sx={{ typography: "h6" }}
+                            disableRipple
+                        />
+                    )}
                 </Tabs>
             </Box>
 
@@ -49,6 +63,7 @@ const SettingPage = ({ dataroomId }) => {
                 <WatermarkSetting dataroomId={dataroomId} />
             )}
             {page === "main" && <MainSetting dataroomId={dataroomId} />}
+            {page === "admin" && <AdminSetting dataroomId={dataroomId} />}
         </Box>
     );
 };

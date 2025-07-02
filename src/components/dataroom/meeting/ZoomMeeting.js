@@ -15,11 +15,27 @@ import {
   InputAdornment,
   Checkbox,
 } from "@mui/material";
+import { Form, Formik } from "formik";
+import * as Yup from "yup";
+import {
+  dataroomNameYupSchema,
+  dataroomDescriptionYupSchema,
+  dataroomOrganizationYupSchema,
+  dataroomPhaseYupSchema,
+  dataroomStorageYupSchema,
+} from "../../../utils/inputValidator";
 
+import {
+  bytesToGb,
+  formatFileSize,
+  gbToBytes,
+} from "../../../utils/fileHelper";
+import { useEffect, useState } from "react";
 import useAlert from "../../../hooks/useAlert";
+import { PHASES } from "../../../configs/dataroomConfig";
 import DataroomForm from "../../reusableComponents/dataroom/DataroomForm";
 
-const MainSetting = ({ dataroomId }) => {
+const ZoomMeeting = ({ dataroomId }) => {
   const { axiosInstance } = useUser();
   const { setAlert } = useAlert();
 
@@ -96,4 +112,4 @@ const MainSetting = ({ dataroomId }) => {
   );
 };
 
-export default MainSetting;
+export default ZoomMeeting;

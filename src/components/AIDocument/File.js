@@ -20,18 +20,10 @@ import {
 } from "@mui/material";
 import { useTreeViewApiRef } from "@mui/x-tree-view/hooks";
 import { memo, useState, useRef, forwardRef } from "react";
-import useUser from "../../hooks/useUser";
 import CloseIcon from "@mui/icons-material/Close";
 import useAlert from "../../hooks/useAlert";
 import lange from "@i18n";
-import { PropaneSharp } from "@mui/icons-material";
-const SelectFileModal = ({
-    open,
-    onClose,
-    fileTree,
-    selectedFiles,
-    handleSelectFiles,
-}) => {
+const File = ({ fileTree, handleSelectFiles }) => {
     const { setAlert } = useAlert();
     const getItemDescendantsIds = (item) => {
         const ids = [];
@@ -42,6 +34,7 @@ const SelectFileModal = ({
 
         return ids;
     };
+    const [confirmState, setConfirmState] = useState(false);
 
     const getAllItemItemIds = () => {
         const ids = [];
@@ -53,7 +46,7 @@ const SelectFileModal = ({
         return ids;
     };
 
-    const [selectedItems, setSelectedItems] = useState(selectedFiles);
+    const [selectedItems, setSelectedItems] = useState([]);
     const toggledItemRef = useRef({});
     const apiRef = useTreeViewApiRef();
 
@@ -145,30 +138,22 @@ const SelectFileModal = ({
         );
     };
 
-    // Added state for confirmation modal
-    const [isConfirmModalOpen, setConfirmModalOpen] = useState(false);
-
-    // Initial submit handler to show confirmation modal
-    const handleInitialSubmit = (e) => {
-        e.preventDefault();
-        setConfirmModalOpen(true);
-    };
-
     const handleFinalSubmit = async (e) => {
         try {
             const newSelectedFiles = getNewSelectedFiles();
-            //e.preventDefault();
+            e.preventDefault();
             if (newSelectedFiles.length === 0) {
                 setAlert("Please select at least one file", "error");
                 return;
             }
 
-            if (newSelectedFiles.length > 100) {
-                setAlert("Please select at most 100 files", "error");
+            if (newSelectedFiles.length > 10) {
+                setAlert("Please select at most 10 files", "error");
                 return;
             }
             handleSelectFiles(newSelectedFiles);
-            onClose();
+            setAlert("Files selected successfully", "success");
+            setConfirmState(true);
         } catch (error) {
             console.error(error);
             setAlert("Failed to select files", "error");
@@ -180,182 +165,82 @@ const SelectFileModal = ({
 
     return (
         <>
-            <Modal
-                sx={{
-                    position: "fixed",
-                    zIndex: 2001,
-                }}
-                open={open}
+            <Box
+                p={2}
+                position={"relative"}
+                borderRadius={2}
+                backgroundColor="white"
+                display="flex"
+                flexDirection="column"
+                component="form"
+                onSubmit={handleFinalSubmit}
             >
-                <Box
-                    margin="10vh auto"
-                    p={2}
-                    position={"relative"}
-                    width={"80%"}
-                    maxHeight={"80vh"}
-                    borderRadius={2}
-                    backgroundColor="white"
-                    display="flex"
-                    flexDirection="column"
-                    component="form"
-                    onSubmit={handleInitialSubmit} // Modified to handle initial submit
-                >
-                    <Box display="flex" alignItems="center" sx={{ mb: 1 }}>
-                        <Typography variant="h5" sx={{ marginRight: 2 }}>
-                            File Selector
-                        </Typography>
-                        <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-                            (Maximum files allowed: 100)
-                        </Typography>
-                    </Box>
-
-                    <Typography variant="h5">
-                        {"File count: "}
-                        {selectedItems ? getNewSelectedFiles().length : 0}
+                <Box display="flex" alignItems="center" sx={{ mb: 1 }}>
+                    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
+                        ({lange("Maximum_Files_allowed")}: 10)
                     </Typography>
+                </Box>
+                <Typography variant="h5">
+                    {lange("File_count")}:{" "}
+                    {selectedItems ? getNewSelectedFiles().length : 0}
+                </Typography>
 
-                    {/* Improvement: Text and Link for Supported Files */}
-                    <Typography variant="body2" sx={{ fontSize: "0.6rem" }}>
-                        Only supported files are displayed, see full supported
-                        file list{" "}
-                        <Link
-                            href="#"
-                            onClick={() => setFileTypeModalOpen(true)}
-                        >
-                            here
-                        </Link>
-                        .
-                    </Typography>
-
-                    <Box position="absolute" alignSelf="flex-end">
-                        <CloseIcon
-                            sx={{
-                                cursor: "pointer",
-                            }}
-                            onClick={onClose}
-                        />
-                    </Box>
-                    <RichTreeView
-                        multiSelect
-                        checkboxSelection
-                        apiRef={apiRef}
-                        items={fileTree}
-                        selectedItems={selectedItems}
-                        onSelectedItemsChange={handleSelectedItemsChange}
-                        onItemSelectionToggle={handleItemSelectionToggle}
-                        expandedItems={expandedItems}
-                        onExpandedItemsChange={handleExpandedItemsChange}
-                        slots={{ item: CustomTreeItem }}
-                        sx={{ overflow: "auto", whiteSpace: "pre-wrap" }}
-                    />
-
-                    <Grid
-                        container
-                        width="100%"
-                        alignItems="flex-end"
-                        justifyContent="flex-end"
-                        marginTop={2}
-                        spacing={1}
-                    >
+                <Typography variant="body2" sx={{ fontSize: "0.6rem" }}>
+                    Only supported files are displayed, see full supported file
+                    list{" "}
+                    <Link href="#" onClick={() => setFileTypeModalOpen(true)}>
+                        here
+                    </Link>
+                    .
+                </Typography>
+                <RichTreeView
+                    multiSelect
+                    checkboxSelection
+                    apiRef={apiRef}
+                    items={fileTree}
+                    selectedItems={selectedItems}
+                    onSelectedItemsChange={(event, newSelectedItems) => {
+                        if (confirmState) return;
+                        handleSelectedItemsChange(event, newSelectedItems);
+                    }}
+                    onItemSelectionToggle={(event, itemId, isSelected) => {
+                        if (confirmState) return;
+                        handleItemSelectionToggle(event, itemId, isSelected);
+                    }}
+                    expandedItems={expandedItems}
+                    onExpandedItemsChange={handleExpandedItemsChange}
+                    slots={{ item: CustomTreeItem }}
+                    sx={{
+                        overflow: "auto",
+                        whiteSpace: "pre-wrap",
+                        pointerEvents: confirmState ? "none" : "auto",
+                        opacity: confirmState ? 0.7 : 1,
+                    }}
+                />
+                <Grid container mt={2} justifyContent="right">
+                    <Grid item sx={{ mr: 2 }}>
                         <Button
-                            variant="contained"
-                            type="submit"
-                            sx={{ ml: 1 }}
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => {
+                                setConfirmState(false);
+                            }}
                         >
-                            {lange("Confirm")}
+                            {lange("Reselect")}
                         </Button>
                     </Grid>
-                </Box>
-            </Modal>
-
-            {/* Confirmation Modal */}
-            <Modal
-                open={isConfirmModalOpen}
-                onClose={() => setConfirmModalOpen(false)}
-                sx={{
-                    position: "fixed",
-                    zIndex: 2002,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-            >
-                <Box
-                    sx={{
-                        width: {
-                            xs: "85%",
-                            sm: "60%",
-                            md: "40%",
-                        },
-                        maxWidth: "450px",
-                        mx: "auto",
-                        p: {
-                            xs: 3,
-                            sm: 2,
-                        },
-                        borderRadius: 2,
-                        bgcolor: "background.paper",
-                        boxShadow: 24,
-                    }}
-                    display="flex"
-                    flexDirection="column"
-                >
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            mb: 3,
-                            fontSize: {
-                                xs: "1rem",
-                                sm: "1.25rem",
-                            },
-                            textAlign: "center",
-                        }}
-                    >
-                        Chat will be reset if new files are selected, do you
-                        wish to proceed?
-                    </Typography>
-                    <Box
-                        display="flex"
-                        justifyContent="center"
-                        gap={2}
-                        sx={{
-                            flexDirection: {
-                                xs: "column",
-                                sm: "row",
-                            },
-                        }}
-                    >
+                    <Grid item>
                         <Button
                             variant="contained"
                             color="primary"
-                            onClick={handleFinalSubmit}
-                            fullWidth
-                            sx={{
-                                minHeight: {
-                                    xs: "44px",
-                                    sm: "36px",
-                                },
-                            }}
+                            type="submit"
+                            disabled={confirmState}
                         >
-                            Yes
+                            {lange("Select")}
                         </Button>
-                        <Button
-                            variant="contained"
-                            color="secondary"
-                            onClick={() => setConfirmModalOpen(false)}
-                            fullWidth
-                            sx={{
-                                minHeight: {
-                                    xs: "44px",
-                                    sm: "36px",
-                                },
-                            }}
-                        >
-                            No
-                        </Button>
-                    </Box>
-                </Box>
-            </Modal>
+                    </Grid>
+                </Grid>
+            </Box>
 
             {/* Improvement: Modal to display supported file types */}
             <Modal
@@ -529,4 +414,4 @@ const SelectFileModal = ({
     );
 };
 
-export default memo(SelectFileModal);
+export default memo(File);

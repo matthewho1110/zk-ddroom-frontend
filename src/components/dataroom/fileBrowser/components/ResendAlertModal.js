@@ -511,6 +511,38 @@ const ResendAlertModal = ({ dataroomId, open, onClose, onSuccess, files }) => {
                                                                                             : "#fff",
                                                                                 }}
                                                                             >
+                                                                                <ListItemIcon>
+                                                                                    <Checkbox
+                                                                                        checked={
+                                                                                            selectedItems.findIndex(
+                                                                                                (
+                                                                                                    selectedItem
+                                                                                                ) =>
+                                                                                                    selectedItem.id ===
+                                                                                                    member._id
+                                                                                            ) !==
+                                                                                            -1
+                                                                                        }
+                                                                                        onChange={() =>
+                                                                                            handleGroupOrMemberClick(
+                                                                                                {
+                                                                                                    group: member.group,
+                                                                                                    id: member._id,
+                                                                                                    name: `${member.user.firstname} ${member.user.lastname}`,
+                                                                                                    organization:
+                                                                                                        member
+                                                                                                            .user
+                                                                                                            .organization,
+                                                                                                    role: member.role,
+
+                                                                                                    subName:
+                                                                                                        member.email,
+                                                                                                    type: "member",
+                                                                                                }
+                                                                                            )
+                                                                                        }
+                                                                                    />
+                                                                                </ListItemIcon>
                                                                                 <ListItemText
                                                                                     secondaryTypographyProps={{
                                                                                         fontSize: 12,

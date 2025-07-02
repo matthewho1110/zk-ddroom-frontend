@@ -36,6 +36,7 @@ const FileUploadRow = ({
     depth,
     // directoryIndex,
     // subIndex,
+    uploadProgress,
     onUploadComplete,
     rootUploadStatus,
     onRemove,
@@ -106,6 +107,12 @@ const FileUploadRow = ({
             await axios.put(signedFile.s3Url, file.data, {
                 headers: {
                     "Content-Type": file.type,
+                },
+                onUploadProgress: (progressEvent) => {
+                    const percentage = Math.round(
+                        (progressEvent.loaded * 100) / progressEvent.total
+                    );
+                    uploadProgress(percentage);
                 },
             });
             const form = new FormData();

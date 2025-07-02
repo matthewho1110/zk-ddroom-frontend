@@ -6,8 +6,9 @@ import QuizIcon from "@mui/icons-material/Quiz";
 import RestoreIcon from "@mui/icons-material/Restore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ChatBubbleIcon from "@mui/icons-material/ChatBubble";
+import VideoCallIcon from "@mui/icons-material/VideoCall";
 
-import lange from '@i18n';
+import lange from "@i18n";
 
 module.exports = function (dataroomId, permissions) {
     return [
@@ -39,6 +40,14 @@ module.exports = function (dataroomId, permissions) {
                     path: `/dataroom/${dataroomId}/files/permissions`,
                     pathname: "/dataroom/[did]/files/permissions",
                     name: lange("Permissions"),
+                    requiredPermission: "isFileManager",
+                },
+
+                {
+                    id: 5,
+                    path: `/dataroom/${dataroomId}/files/aidocument`,
+                    pathname: "/dataroom/[did]/files/aidocument",
+                    name: lange("AI_Document_Generator"),
                     requiredPermission: "isFileManager",
                 },
             ],
@@ -77,7 +86,13 @@ module.exports = function (dataroomId, permissions) {
         //     name: "Events",
         //     icon: <EventNoteIcon />,
         // },
-
+        {
+            id: 5,
+            path: `/dataroom/${dataroomId}/meeting`,
+            pathname: "/dataroom/[did]/meeting",
+            name: lange("Meeting"),
+            icon: <VideoCallIcon />,
+        },
         {
             id: 7,
             path: `/dataroom/${dataroomId}/history`,

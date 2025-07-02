@@ -21,6 +21,7 @@ import lange from "@i18n";
 import { isMobile } from "react-device-detect";
 import useDataroomAPI from "@hooks/useDataroomAPI";
 import { Interweave, Markup } from "interweave";
+import { set } from "lodash";
 
 // const mokeValue = [
 //     {
@@ -67,7 +68,9 @@ const MyCustomNoRowsOverlay = () => (
 const ActivityHistoryPage = ({ dataroomId }) => {
     const [pagination, setPagination] = useState({
         page: 0,
+        pageSize: isMobile ? 100000 : 0,
     });
+
     const { axiosInstance } = useUser();
     const { alertHandler } = useAlert();
     const [filters, setFilters] = useState(INITIAL_FILTERS);
@@ -96,7 +99,6 @@ const ActivityHistoryPage = ({ dataroomId }) => {
         try {
             let page = _pagination.page;
             let pageSize = _pagination.pageSize;
-
             if (
                 dataroomId == null ||
                 page == null ||
@@ -540,16 +542,125 @@ const ActivityHistoryPage = ({ dataroomId }) => {
                                             ).toLocaleString()}
                                         </Typography>
                                     </Box>
-                                    <Typography
-                                        variant="body1"
-                                        px={0}
-                                        width={"100%"}
-                                        fontSize={"16px"}
-                                        fontWeight={600}
-                                        my={1}
-                                    >
-                                        {row.description.base}
-                                    </Typography>
+                                    {row?.description?.extra ? (
+                                        (() => {
+                                            const currentShowMore =
+                                                showMore.find(
+                                                    (a) => a._id === row._id
+                                                )?.show;
+                                            return currentShowMore ? (
+                                                <Box
+                                                    sx={{
+                                                        px: 0,
+                                                        width: "100%",
+                                                        fontSize: "16px",
+                                                        fontWeight: 600,
+                                                        my: 1,
+                                                    }}
+                                                >
+                                                    <Interweave
+                                                        allowAttributes={true}
+                                                        content={
+                                                            row?.description
+                                                                ?.base
+                                                        }
+                                                    />
+                                                    <Interweave
+                                                        allowAttributes={true}
+                                                        content={
+                                                            row?.description
+                                                                ?.extra
+                                                        }
+                                                    />
+                                                    <p
+                                                        className="show-hide-btn"
+                                                        onClick={() => {
+                                                            setShowMore(
+                                                                (prevState) =>
+                                                                    prevState.map(
+                                                                        (
+                                                                            item
+                                                                        ) => {
+                                                                            if (
+                                                                                item._id ===
+                                                                                row._id
+                                                                            ) {
+                                                                                return {
+                                                                                    ...item,
+                                                                                    show: false,
+                                                                                };
+                                                                            }
+                                                                            return item;
+                                                                        }
+                                                                    )
+                                                            );
+                                                        }}
+                                                    >
+                                                        hide details
+                                                    </p>
+                                                </Box>
+                                            ) : (
+                                                <Box
+                                                    sx={{
+                                                        px: 0,
+                                                        width: "100%",
+                                                        fontSize: "16px",
+                                                        fontWeight: 600,
+                                                        my: 1,
+                                                    }}
+                                                >
+                                                    <Interweave
+                                                        allowAttributes={true}
+                                                        content={
+                                                            row?.description
+                                                                ?.base
+                                                        }
+                                                    />
+                                                    <p
+                                                        className="show-hide-btn"
+                                                        onClick={() => {
+                                                            setShowMore(
+                                                                (prevState) =>
+                                                                    prevState.map(
+                                                                        (
+                                                                            item
+                                                                        ) => {
+                                                                            if (
+                                                                                item._id ===
+                                                                                row._id
+                                                                            ) {
+                                                                                return {
+                                                                                    ...item,
+                                                                                    show: true,
+                                                                                };
+                                                                            }
+                                                                            return item;
+                                                                        }
+                                                                    )
+                                                            );
+                                                        }}
+                                                    >
+                                                        show more
+                                                    </p>
+                                                </Box>
+                                            );
+                                        })()
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                px: 0,
+                                                width: "100%",
+                                                fontSize: "16px",
+                                                fontWeight: 600,
+                                                my: 1,
+                                            }}
+                                        >
+                                            <Interweave
+                                                allowAttributes={true}
+                                                content={row?.description?.base}
+                                            />
+                                        </Box>
+                                    )}
                                     <Box
                                         display="flex"
                                         alignItems="center"

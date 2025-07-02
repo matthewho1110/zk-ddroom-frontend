@@ -14,6 +14,8 @@ import useUser from "../../../../hooks/useUser";
 import React from "react";
 
 import { useRouter } from "next/router";
+import { useInterval } from "@utils/generalHelper";
+import { set } from "lodash";
 
 interface SummarizerProps {
     open: boolean;
@@ -38,11 +40,14 @@ const Summarizer: React.FC<SummarizerProps> = ({ open, onClose, fileId }) => {
         instruction: "",
     });
 
+    const [polling, setPolling] = React.useState(false);
+
     const generateSummary = async () => {
         setSummary((prev) => ({
             ...prev,
             loading: true,
         }));
+        setPolling(true);
         const { data: summaryData } = await axiosInstance.patch(
             `/datarooms/${did}/files/${fileId}/summarize`,
             {
@@ -58,6 +63,7 @@ const Summarizer: React.FC<SummarizerProps> = ({ open, onClose, fileId }) => {
             instruction: "",
             summary: summaryData.summary.text.value,
         }));
+        setPolling(false);
     };
 
     const getSummary = async () => {
@@ -65,18 +71,23 @@ const Summarizer: React.FC<SummarizerProps> = ({ open, onClose, fileId }) => {
             `/datarooms/${did}/files/${fileId}/summary`
         );
 
-        console.log(summaryData);
-
-        setSummary((prev) => ({
-            ...prev,
-            loading: false,
-            summary: summaryData.summary?.text?.value || "",
-        }));
+        if (summaryData.summary?.text?.value === "Summarizing..." || polling) {
+            setSummary((prev) => ({
+                ...prev,
+                loading: true,
+            }));
+        } else {
+            setSummary((prev) => ({
+                ...prev,
+                loading: false,
+                summary: summaryData.summary?.text?.value || "",
+            }));
+        }
     };
 
-    React.useEffect(() => {
+    useInterval(() => {
         getSummary();
-    }, []);
+    }, 5000);
 
     return (
         <Drawer
@@ -84,89 +95,84 @@ const Summarizer: React.FC<SummarizerProps> = ({ open, onClose, fileId }) => {
             open={open}
             sx={{
                 zIndex: 1301,
+                '& .MuiDrawer-paper': {
+                    width: '100vw', // Full width
+                    height: '100vh', // Full height
+                    maxWidth: '100vw',
+                    maxHeight: '100vh',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 2,
+                },
             }}
         >
-            <Box p={2} minWidth="30vw" maxWidth="50vw">
-                <IconButton
-                    onClick={onClose}
-                    sx={{
-                        ml: "auto",
-                    }}
-                >
+            <Box display="flex" justifyContent="space-between" alignItems="center" p={2}>
+                <Typography variant="h3">AI Summarizer</Typography>
+                <IconButton onClick={onClose}>
                     <Typography variant="h3">X</Typography>
                 </IconButton>
-
-                <Typography variant="h3" my={2}>
-                    AI Summarizer
-                </Typography>
-                <Box
-                    id="summary-area"
-                    display="flex"
-                    flexDirection="column"
-                    justifyContent="center"
-                    alignItems="center"
-                    minHeight="20vh"
-                    width={"100%"}
-                >
-                    {summary.loading == true && (
-                        <CircularProgress
-                            sx={{
-                                display: "block",
-                                mx: "auto",
-                                mb: 2,
-                            }}
-                        />
-                    )}
-                    {summary.loading == false && summary.summary.length > 0 && (
-                        <Paper
-                            sx={{
-                                typography: "body1",
-                                whiteSpace: "pre-wrap",
-                                p: 2,
-                                mb: 2,
-                                maxHeight: "50vh",
-                                overflowY: "auto",
-                            }}
-                        >
-                            {summary.summary}
-                        </Paper>
-                    )}
-                    {summary.loading == false && (
-                        <TextareaAutosize
-                            style={{
-                                width: "100%",
-                                marginBottom: "16px",
-                            }}
-                            aria-label="minimum height"
-                            minRows={8}
-                            placeholder={
-                                summary.summary.length > 0
-                                    ? "Describe how you wish to improve the generated summary"
-                                    : "Generate a summary for the current document"
-                            }
-                            value={summary.instruction}
-                            onChange={(e) =>
-                                setSummary((prev) => ({
-                                    ...prev,
-                                    instruction: e.target.value,
-                                }))
-                            }
-                        />
-                    )}
-                </Box>
-
-                <Box width="100%" display="flex" justifyContent="flex-end">
-                    <Button
-                        onClick={generateSummary}
-                        variant="contained"
-                        disabled={summary.loading}
+            </Box>
+    
+            <Box
+                id="summary-area"
+                display="flex"
+                flexDirection="column"
+                justifyContent="center"
+                alignItems="center"
+                flexGrow={1} // Allow it to expand fully
+                px={3}
+                overflow="hidden"
+            >
+                {summary.loading && (
+                    <CircularProgress sx={{ display: 'block', mx: 'auto', mb: 2 }} />
+                )}
+                {summary.loading === false && summary.summary.length > 0 && (
+                    <Paper
+                        sx={{
+                            typography: 'body1',
+                            whiteSpace: 'pre-wrap',
+                            p: 2,
+                            mb: 2,
+                            maxHeight: '60vh',
+                            width: '100%',
+                            overflowY: 'auto',
+                        }}
                     >
-                        Generate
-                    </Button>
-                </Box>
+                        {summary.summary}
+                    </Paper>
+                )}
+                {summary.loading === false && (
+                    <TextareaAutosize
+                        style={{
+                            width: '100%',
+                            marginBottom: '16px',
+                        }}
+                        aria-label="minimum height"
+                        minRows={8}
+                        placeholder={
+                            summary.summary.length > 0
+                                ? "Describe how you wish to improve the generated summary"
+                                : "Generate a summary for the current document"
+                        }
+                        value={summary.instruction}
+                        onChange={(e) =>
+                            setSummary((prev) => ({
+                                ...prev,
+                                instruction: e.target.value,
+                            }))
+                        }
+                    />
+                )}
+            </Box>
+    
+            <Box width="100%" display="flex" justifyContent="flex-end" p={2}>
+                <Button onClick={generateSummary} variant="contained" disabled={summary.loading}>
+                    Generate
+                </Button>
             </Box>
         </Drawer>
     );
+    
 };
 
 export default Summarizer;

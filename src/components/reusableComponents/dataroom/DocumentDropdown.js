@@ -5,18 +5,18 @@ import { Box, FormControl, MenuItem, TextField } from "@mui/material";
 
 const StyledSelect = styled(TextField)({});
 
-function RolesDropdown({
-    roles,
+function DocumentDropdown({
+    documents,
     onSelect,
-    selectedRole,
+    selectedDocument,
+    label,
     sx,
-    dataroomRoleName,
 }) {
     return (
         <StyledSelect
-            id="role-select"
-            value={selectedRole}
-            label="Role"
+            id="document-select"
+            value={selectedDocument}
+            label={label}
             select
             fullWidth
             InputLabelProps={{
@@ -24,19 +24,19 @@ function RolesDropdown({
             }}
             sx={sx}
         >
-            {roles.map((role) => (
+            {documents.map((document) => (
                 <MenuItem
-                    key={role}
-                    value={dataroomRoleName[role] || role}
+                    key={document}
+                    value={document}
                     onClick={() => {
-                        onSelect(role);
+                        onSelect(document);
                     }}
                 >
-                    {dataroomRoleName[role] || role}
+                    {document}
                 </MenuItem>
             ))}
         </StyledSelect>
     );
 }
 
-export default memo(RolesDropdown);
+export default memo(DocumentDropdown);

@@ -4,8 +4,10 @@ import { useRouter } from "next/router";
 // MUI components
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CompareIcon from "@mui/icons-material/Compare";
 import MoveIcon from "@mui/icons-material/DriveFileMove";
 import SummarizeIcon from "@mui/icons-material/Summarize";
+import AudioFileIcon from "@mui/icons-material/AudioFile";
 import {
     Box,
     Button,
@@ -15,6 +17,10 @@ import {
     TextField,
     Typography,
     Paper,
+    Menu,
+    MenuItem,
+    Modal,
+    Collapse,
 } from "@mui/material";
 import styled from "@emotion/styled";
 import SearchIcon from "@mui/icons-material/Search";
@@ -25,6 +31,10 @@ import ReplyIcon from "@mui/icons-material/Reply";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import CalendarViewMonthIcon from "@mui/icons-material/CalendarViewMonth";
 import SendIcon from "@mui/icons-material/Send";
+import {
+    PermissionTypeEnum,
+    permissionConfigMap,
+} from "./fileViewer/permission-config-map";
 
 import FileList from "./FileList";
 import Ancestry from "./Ancestry";
@@ -43,6 +53,7 @@ import useSWR from "swr";
 import ErrorPage from "../../reusableComponents/ErrorPage";
 // import BackgroundFileUploader from "./legacy_BackgroundFileUploader";
 import CustomFileViewer from "./fileViewer/CustomFileViewer";
+import DocXViewer from "./fileViewer/DocXViewer";
 import SearchFileModal from "./SearchFileModal";
 import RenameFileModal from "./RenameFileModal";
 import DeleteFileModal from "./DeleteFileModal";
@@ -65,6 +76,16 @@ import { isMobile } from "react-device-detect";
 import UserAccessReportModal from "@reusableComponents/dataroom/stats/UserAccessReport/UserAccessReportModal";
 import dynamic from "next/dynamic";
 import Summarizer from "./fileViewer/Summarizer";
+import GenTranscript from "./fileViewer/GenTranscript";
+import {
+    ArrowDropDown,
+    ArrowUpward,
+    CurrencyFrancTwoTone,
+    KeyboardArrowDown,
+    KeyboardArrowUp,
+} from "@mui/icons-material";
+import DownloadModal from "./DownloadFileModal";
+import { set } from "lodash";
 const ResendAlertModal = dynamic(import("./components/ResendAlertModal"), {
     ssr: false,
 });
@@ -98,20 +119,38 @@ const FileFilter = styled(TextField)({
 });
 
 function Browser({ dataroomId, filePath, onSetTitle }) {
+    const { permission: currentPermission } = useUser(); // Fetch the user's permission level
+    const [open, setOpen] = useState(false);
+
+    const handleClick = () => {
+        setOpen((prev) => !prev);
+    };
+
     const router = useRouter();
     const [status, setStatus] = useState(STATUSES.LOADING);
     const [search, setSearch] = useState(false);
     const [filter, setFilter] = useState("");
     const [createFolder, setCreateFolder] = useState(false);
     const [summarizerOpen, setSummarizerOpen] = useState(false);
+    const [transcriptOpen, setTranscriptOpen] = useState(false);
     const [renameFile, setRenameFile] = useState(null);
     const [moveFiles, setMoveFiles] = useState(null);
     const [deleteFiles, setDeleteFiles] = useState([]);
+    const [downloadFile, setDownloadFile] = useState([]);
     const [currentFile, setCurrentFile] = useState(null);
+    const [currentDirectory, setCurrentDirectory] = useState(null);
     const [selectedFiles, setSelectedFiles] = useState([]);
     const [accessReportFile, setAccessReportFile] = useState(null);
     const [resendAlertFiles, setResendAlertFiles] = useState([]);
     const [viewLayout, setViewLayout] = useState("grid");
+    const [isCompare, setIsCompare] = useState(false);
+    const [compareFiles, setCompareFiles] = useState([]);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const [compareMode, setCompareMode] = useState();
+
+    const [unsupportedFileModalOpen, setUnsupportedFileModalOpen] =
+        useState(false);
+    const [unsupportedFile, setUnsupportedFile] = useState(null);
 
     const reference = useRef();
     reference.current = currentFile;
@@ -164,6 +203,30 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
             setSelectedFiles(currentFile?.files.map((file) => file._id) || []);
         }
     }, [selectedFiles]);
+
+    const handleCompare = (mode) => {
+        setCompareFiles([
+            currentFile.files.find((file) => file._id === selectedFiles[0]),
+            currentFile.files.find((file) => file._id === selectedFiles[1]),
+        ]);
+        setCompareMode(mode);
+        // Check if both files are pdf
+        if (
+            !(
+                currentFile.files.find((file) => file._id === selectedFiles[0])
+                    .type === "application/pdf" &&
+                currentFile.files.find((file) => file._id === selectedFiles[1])
+                    .type === "application/pdf"
+            )
+        ) {
+            setAlert("Only PDF files can be compared", "warning");
+            return;
+        }
+        handleFileClick(
+            currentFile.files.find((file) => file._id === selectedFiles[0]).path
+        );
+        setIsCompare(true);
+    };
 
     const prepareUploads = (acceptedFiles) => {
         let uploadObject = {};
@@ -224,7 +287,6 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
             const uploadArray = Object.keys(uploadObject).map((key) => {
                 return convertFileObjectToArray(key, uploadObject[key]);
             });
-
             setUploads(uploadArray);
             // console.log(uploadArray);
         } catch (err) {
@@ -244,13 +306,30 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                     _path
                 )}`
             );
-
+            if (compareFiles.length > 0) {
+                const responseCompare1 = await axiosInstance.get(
+                    `datarooms/${dataroomId}/files?path=${encodeURIComponent(
+                        compareFiles[0].path
+                    )}`
+                );
+                const responseCompare2 = await axiosInstance.get(
+                    `datarooms/${dataroomId}/files?path=${encodeURIComponent(
+                        compareFiles[1].path
+                    )}`
+                );
+                setCompareFiles([responseCompare1.data, responseCompare2.data]);
+            }
             setCurrentFile(response.data);
+            if (response.data?.type == "folder") {
+                setCurrentDirectory(response.data?._id);
+            }
             setStatus(STATUSES.LOADED);
             setSelectedFiles([]);
-            ancestryRef.current?.scrollTo({
-                left: ancestryRef.current?.scrollWidth,
-            });
+            setTimeout(() => {
+                ancestryRef.current?.scrollTo({
+                    left: ancestryRef.current?.scrollWidth,
+                });
+            }, 0);
         } catch (err) {
             if (err.response?.status === 404) {
                 setStatus(STATUSES.NOT_FOUND_ERROR);
@@ -262,14 +341,78 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
 
     const handleFileClick = useCallback(
         (_path) => {
-            router.push(
-                `/dataroom/${dataroomId}/files?filePath=${encodeURIComponent(
-                    _path
-                )}`
-            );
+            if (!_path.includes(".")) {
+                router.push(
+                    `/dataroom/${dataroomId}/files?filePath=${encodeURIComponent(
+                        _path
+                    )}`
+                );
+                return;
+            }
+            const file = currentFile?.files.find((file) => file.path === _path);
+            if (file) {
+                if (!isFileSupported(file) && file.type !== "folder") {
+                    // Handle unsupported file case
+                    setUnsupportedFile(file);
+                    setUnsupportedFileModalOpen(true);
+                } else {
+                    // Open the file in the viewer
+                    router.push(
+                        `/dataroom/${dataroomId}/files?filePath=${encodeURIComponent(
+                            _path
+                        )}`
+                    );
+                }
+            }
         },
-        [dataroomId]
+        [dataroomId, currentFile]
     );
+
+    const WEBVIEWER_SUPPORTED_FILE_EXTENSIONS = [
+        //PDF
+        "application/pdf",
+
+        // Microsoft Office
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+
+        "application/rtf",
+        // Images
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/bmp",
+        "image/tiff",
+        "image/svg+xml",
+
+        // Plain Text and Markup
+        "text/plain",
+        "text/html",
+        "text/markdown",
+        "application/json",
+        "application/xml",
+        "application/javascript",
+
+        // CAD Formats (Requires configuration/plugins)
+        "application/vnd.dwg",
+        "application/vnd.dxf",
+
+        // Videos (If configured)
+        "video/mp4",
+        "video/webm",
+        "video/ogg",
+
+        // Audio (If configured)
+        "audio/mpeg",
+    ];
+
+    const isFileSupported = (file) => {
+        return WEBVIEWER_SUPPORTED_FILE_EXTENSIONS.includes(file.type);
+    };
 
     const handleFileSelect = (fileId, selected) => {
         if (selected) {
@@ -387,13 +530,34 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
         setDeleteFiles([]);
         selectedFiles.length > 0 && setSelectedFiles([]);
     };
-    const handleFileDownload = async (file) => {
-        try {
-            downloadFile(file?.tempUri, file.name);
-        } catch (error) {
-            console.error("An error occurred:", error);
-        }
-    };
+    const handleFileDownload = useCallback(
+        (_fileId) => {
+            let itemIds = _fileId ? [_fileId] : [...selectedFiles];
+
+            // Separate files and folders
+            let downloadFiles = [];
+            let downloadFolders = [];
+
+            itemIds.forEach((itemId) => {
+                const item = currentFile?.files.find(
+                    (file) => file._id === itemId
+                );
+                if (item) {
+                    if (item.isFolder || item.type === "folder") {
+                        downloadFolders.push(item);
+                    } else {
+                        downloadFiles.push(item);
+                    }
+                }
+            });
+
+            setDownloadFile({
+                files: downloadFiles,
+                folders: downloadFolders,
+            });
+        },
+        [dataroomId, selectedFiles, currentFile]
+    );
 
     const handleRemoveFileUpload = useCallback((_tempId) => {
         const getUpdatedUploads = (uploads) => {
@@ -468,6 +632,9 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                 filePath != "/root" ? _filePath[_filePath.length - 1] : "";
             // onSetTitle(title);
         }
+        if (selectedFiles.length != 2) {
+            setIsCompare(false);
+        }
     }, [dataroomId, filePath]);
     if (status === STATUSES.UNAUTHORIZED_ERROR) {
         return <ErrorPage message="You are not permitted to enter this page" />;
@@ -539,19 +706,40 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                     )}
                     {
                         // For summarizer temp use (Only support pdf file)
-                        currentFile?.type == "application/pdf" && (
+                        currentFile?.type == "application/pdf" &&
+                            !isCompare && (
+                                <Box ml="auto">
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<SummarizeIcon />}
+                                        component="label"
+                                        sx={{
+                                            flex: "none",
+                                        }}
+                                        onClick={() => setSummarizerOpen(true)}
+                                    >
+                                        AI Summary
+                                    </Button>
+                                </Box>
+                            )
+                    }
+                    {
+                        // For speech to text use (Only support mp3,mp4 file)
+                        (currentFile?.type == "video/mp4" ||
+                            currentFile?.type == "audio/mpeg") && (
                             <Box ml="auto">
                                 <Button
                                     variant="contained"
                                     color="primary"
-                                    startIcon={<SummarizeIcon />}
+                                    startIcon={<AudioFileIcon />}
                                     component="label"
                                     sx={{
                                         flex: "none",
                                     }}
-                                    onClick={() => setSummarizerOpen(true)}
+                                    onClick={() => setTranscriptOpen(true)}
                                 >
-                                    AI Summary
+                                    AI Gen Transcript
                                 </Button>
                             </Box>
                         )
@@ -560,10 +748,10 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         <Box
                             sx={{
                                 overflowX: "auto",
-                                maxWidth: !isMobile ? "60%" : "auto",
+                                maxWidth: !isMobile ? "80%" : "auto",
                             }}
                             ml={isMobile ? "0" : "auto"}
-                            maxWidth={!isMobile ? "60%" : "auto"}
+                            maxWidth={!isMobile ? "80%" : "auto"}
                         >
                             <Stack
                                 direction="row"
@@ -586,6 +774,21 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                                             lange("Selected")}
                                     </Button>
                                 )}
+
+                                {/* DownloadAll Button */}
+                                {selectedFiles.length > 0 && (
+                                    <Button
+                                        variant="contained"
+                                        color="success"
+                                        component="label"
+                                        sx={{
+                                            flex: "none",
+                                        }}
+                                        onClick={() => handleFileDownload()}
+                                    >
+                                        {lange("Download")}
+                                    </Button>
+                                )}
                                 {selectedFiles.length > 0 && canDelete && (
                                     <Button
                                         variant="contained"
@@ -600,6 +803,55 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                                         {lange("Delete")}
                                     </Button>
                                 )}
+                                {status === STATUSES.LOADED &&
+                                    selectedFiles.length == 2 && (
+                                        <>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                startIcon={<CompareIcon />}
+                                                component="label"
+                                                sx={{
+                                                    flex: "none",
+                                                }}
+                                                endIcon={<ArrowDropDown />}
+                                                onClick={(event) => {
+                                                    event.preventDefault();
+                                                    event.stopPropagation();
+                                                    setAnchorEl(
+                                                        event.currentTarget
+                                                    );
+                                                }}
+                                            >
+                                                {lange("Compare")}
+                                            </Button>
+
+                                            <Menu
+                                                anchorEl={anchorEl}
+                                                open={Boolean(anchorEl)}
+                                                onClose={() =>
+                                                    setAnchorEl(null)
+                                                }
+                                            >
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        handleCompare("text");
+                                                        setAnchorEl(null);
+                                                    }}
+                                                >
+                                                    Text PDF Compare
+                                                </MenuItem>
+                                                <MenuItem
+                                                    onClick={() => {
+                                                        handleCompare("scan");
+                                                        setAnchorEl(null);
+                                                    }}
+                                                >
+                                                    Scanned PDF Compare
+                                                </MenuItem>
+                                            </Menu>
+                                        </>
+                                    )}
                                 {selectedFiles.length > 0 && canMove && (
                                     <Button
                                         variant="contained"
@@ -765,7 +1017,78 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         }}
                     />
                 )}
+                {isMobile && currentFile?.type == "folder" && canUpload && (
+                    <Box
+                        sx={{
+                            position: "fixed",
+                            bottom: 0,
+                            left: 0,
+                            width: "100vw",
+                            minWidth: "100vw",
+                            backgroundColor: "#E8E8E8",
+                            zIndex: 1000,
+                            borderRadius: "30px",
+                        }}
+                    >
+                        <Button
+                            onClick={handleClick}
+                            sx={{
+                                width: "100%",
+                                borderRadius: 0,
+                                backgroundColor: "#E0E0E0",
+                                color: "black",
+                            }}
+                        >
+                            {open ? <KeyboardArrowDown /> : <KeyboardArrowUp />}
+                        </Button>
 
+                        <Collapse in={open} timeout="auto" unmountOnExit>
+                            <Box
+                                sx={{
+                                    maxWidth: "100vw",
+                                    p: 2,
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                    borderRadius: "0px 0px 8px 8px",
+                                }}
+                            >
+                                <Button
+                                    variant="contained"
+                                    startIcon={<FileUploadIcon />}
+                                    component="label"
+                                    sx={{
+                                        borderRadius: "20px",
+                                    }}
+                                >
+                                    {lange("Upload")}
+                                    <input {...getInputProps()} />
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<CreateNewFolderIcon />}
+                                    component="label"
+                                    sx={{
+                                        borderRadius: "20px",
+                                    }}
+                                    onClick={() => setCreateFolder(true)}
+                                >
+                                    {lange("Create_Folder")}
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={handleAllFilesReindex}
+                                    sx={{
+                                        borderRadius: "20px",
+                                    }}
+                                    startIcon={<ListIcon />}
+                                >
+                                    {lange("Reindex")}
+                                </Button>
+                            </Box>
+                        </Collapse>
+                    </Box>
+                )}
                 <Paper
                     sx={{
                         // height: "100%",
@@ -848,16 +1171,78 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         currentFile.type !== "folder" && (
                             <CustomFileViewer
                                 permission={currentFile?.permission?.level}
-                                file={currentFile}
+                                fileOrFiles={
+                                    isCompare ? compareFiles : currentFile
+                                }
                                 dataroomId={dataroomId}
+                                isCompare={isCompare}
+                                compareMode={compareMode}
                             ></CustomFileViewer>
                         )}
                 </Paper>
-
                 {/*                                 
                     Below are all the modals
                 */}
 
+                {unsupportedFileModalOpen && (
+                    <Modal
+                        open={unsupportedFileModalOpen}
+                        onClose={() => setUnsupportedFileModalOpen(false)}
+                    >
+                        <Box
+                            style={{
+                                position: "absolute",
+                                top: "50%",
+                                left: "50%",
+                                transform: "translate(-50%, -50%)",
+                                padding: 20,
+                                backgroundColor: "white",
+                                borderRadius: 8,
+                                boxShadow: 24,
+                                minWidth: "300px", // Minimum width for the modal
+                                maxWidth: "500px", // Maximum width
+                                maxHeight: "400px", // Optional height limit
+                                textAlign: "center",
+                                position: "relative", // Allow positioning for the button
+                                display: "flex",
+                                flexDirection: "column", // Stack content vertically
+                                justifyContent: "flex-start", // Keep items starting from the top
+                                height: "auto", // Allow dynamic height based on content
+                            }}
+                        >
+                            <Typography variant="h6" gutterBottom>
+                                The selected file is not supported
+                            </Typography>
+
+                            {currentFile?.permission?.level >=
+                            PermissionTypeEnum.download_raw ? (
+                                <Button
+                                    onClick={handleDownload}
+                                    style={{
+                                        position: "absolute",
+                                        bottom: 20, // Stick it near the bottom of the modal
+                                        right: 20, // Align it to the right
+                                        backgroundColor: "#007BFF",
+                                        color: "white",
+                                        fontWeight: "bold",
+                                        textTransform: "none",
+                                    }}
+                                >
+                                    Download
+                                </Button>
+                            ) : (
+                                <Typography
+                                    variant="body1"
+                                    color="error"
+                                    style={{ marginTop: 20 }}
+                                >
+                                    You do not have permission to download this
+                                    file.
+                                </Typography>
+                            )}
+                        </Box>
+                    </Modal>
+                )}
                 {uploads?.length > 0 && (
                     <UploaderModal
                         currentFileId={currentFile?._id}
@@ -874,7 +1259,6 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         open={uploads?.length > 0}
                     />
                 )}
-
                 {/** Keep the state */}
                 <SearchFileModal
                     dataroomId={dataroomId}
@@ -889,14 +1273,12 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         })
                     }
                 />
-
                 <UserAccessReportModal
                     dataroomId={dataroomId}
                     open={!!accessReportFile}
                     onClose={() => setAccessReportFile(null)}
                     file={accessReportFile}
                 />
-
                 {!!resendAlertFiles.length && (
                     <ResendAlertModal
                         dataroomId={dataroomId}
@@ -906,7 +1288,6 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         files={resendAlertFiles}
                     />
                 )}
-
                 {/** Add conditional rendering to reset everytime */}
                 {moveFiles != null && (
                     <MoveFilesModal
@@ -924,7 +1305,6 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         oldPath={currentFile?.path}
                     />
                 )}
-
                 {/** Add conditional rendering to reset everytime */}
                 {renameFile != null && (
                     <RenameFileModal
@@ -950,7 +1330,6 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                         onClose={() => setRenameFile(null)}
                     />
                 )}
-
                 {!!deleteFiles.length && (
                     <DeleteFileModal
                         dataroomId={dataroomId}
@@ -961,8 +1340,19 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                     />
                 )}
 
+                {/* downloadFileModal */}
+                {downloadFile &&
+                    (downloadFile.files?.length > 0 ||
+                        downloadFile.folders?.length > 0) && (
+                        <DownloadModal
+                            open={true}
+                            onClose={() => setDownloadFile(null)}
+                            files={downloadFile.files || []}
+                            folders={downloadFile.folders || []}
+                            dataroomId={dataroomId}
+                        />
+                    )}
                 {/** Add conditional rendering to reset everytime */}
-
                 {createFolder && (
                     <CreateFolderModal
                         dataroomId={dataroomId}
@@ -986,6 +1376,19 @@ function Browser({ dataroomId, filePath, onSetTitle }) {
                             setSummarizerOpen(false);
                         }}
                         fileId={currentFile?._id}
+                    />
+                )}
+                {(currentFile?.type == "video/mp4" ||
+                    currentFile?.type == "audio/mpeg") && (
+                    <GenTranscript
+                        open={transcriptOpen}
+                        onClose={() => {
+                            setTranscriptOpen(false);
+                        }}
+                        canUpload={canUpload}
+                        fileId={currentFile?._id}
+                        fileDirectory={currentDirectory}
+                        fileName={currentFile?.name}
                     />
                 )}
             </Box>

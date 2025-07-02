@@ -90,6 +90,7 @@ export default {
     Documents: "文檔",
     File_Browser: "文檔瀏覽器",
     Permissions: "權限",
+    AI_Document_Generator: "AI文檔生成器",
     Events: "活動",
     Member_Activities: "用戶歷史記錄",
     Members: "成員",
@@ -255,4 +256,14 @@ export default {
     Preview: "預覽",
     "My Questions": "我的問題",
     "Assigned To Me": "指定給我",
+
+    Select_Files: "選擇文件",
+    Maximum_Files_allowed: "允許的最大文件數",
+    File_count: "文件數",
+    Output_document: "輸出文檔",
+    Template: "模板",
+    Language: "語言",
+    Instruction_for_the_AI: "對AI的指示",
+
+    Meeting: "會議",
 };
