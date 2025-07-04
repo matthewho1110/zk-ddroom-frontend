@@ -48,7 +48,6 @@ dist/
 .idea
 *.iml
 
-yarn.lock
 
 # scannerwork
 .scannerwork/
